@@ -111,7 +111,7 @@ This project demonstrates a **complete full-stack application** with enterprise-
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yourusername/tp2-devops.git
+git clone https://github.com/cap-mahdi/tp2-devops.git
 cd tp2-devops
 
 # 2. Setup environment variables
@@ -790,7 +790,7 @@ MIT License - See LICENSE file for details.
 
 **Built with ❤️ using modern web technologies**
 
-[GitHub](https://github.com/yourusername/tp2-devops) • [Documentation](./QUICKSTART.md) • [Issues](https://github.com/yourusername/tp2-devops/issues)
+[GitHub](https://github.com/cap-mahdi/tp2-devops) • [Documentation](./QUICKSTART.md) • [Issues](https://github.com/cap-mahdi/tp2-devops/issues)
 
 ---
 
