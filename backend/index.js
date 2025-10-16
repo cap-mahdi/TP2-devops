@@ -63,8 +63,16 @@ process.on('SIGTERM', () => {
 
 // ===== EXPRESS APP SETUP =====
 const app = express();
-const port = 4000;
-app.use(cors());
+const port = process.env.PORT || 4000;
+
+// CORS configuration - allow frontend origin
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Logging middleware
