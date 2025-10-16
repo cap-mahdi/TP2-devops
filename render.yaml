@@ -1,0 +1,42 @@
+services:
+  # Backend API Service
+  - type: web
+    name: tp2-devops-backend
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: backend
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        sync: false
+        # Set this to your frontend URL after frontend is deployed
+        # Example: https://tp2-devops-frontend.onrender.com
+      - key: LOG_LEVEL
+        value: info
+    autoDeploy: true
+
+  # Frontend Static Site
+  - type: web
+    name: tp2-devops-frontend
+    runtime: static
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    rootDir: frontend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REACT_APP_API_URL
+        sync: false
+        # IMPORTANT: Set this to your backend URL after backend is deployed
+        # Example: https://tp2-devops-backend.onrender.com
+        # DO NOT include /users - just the base URL
+    autoDeploy: true
