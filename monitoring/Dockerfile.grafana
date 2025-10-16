@@ -1,0 +1,26 @@
+FROM grafana/grafana:latest
+
+# Set environment variables
+ENV GF_SECURITY_ADMIN_USER=admin
+ENV GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin123}
+ENV GF_USERS_ALLOW_SIGN_UP=false
+ENV GF_AUTH_ANONYMOUS_ENABLED=false
+
+# Copy custom configuration
+COPY ./grafana.ini /etc/grafana/grafana.ini
+COPY ./provisioning /etc/grafana/provisioning
+
+# Copy dashboards
+COPY ./dashboards /var/lib/grafana/dashboards
+
+# Set permissions
+USER root
+RUN chmod -R 755 /etc/grafana/provisioning
+RUN chmod -R 755 /var/lib/grafana/dashboards
+USER grafana
+
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
