@@ -161,7 +161,7 @@ curl http://localhost:4000/metrics
 
 **Base URL**: `http://localhost:4000` (dev) | `https://your-backend.onrender.com` (prod)
 
-| Method | Endpoint | Description | Request Body | Response |
+| Method | Endpoint | Description | Request Body |a Response |
 |--------|----------|-------------|--------------|----------|
 | GET | `/health` | Health check | - | `{"status":"ok","timestamp":"..."}` |
 | GET | `/metrics` | Prometheus metrics | - | Prometheus format |
@@ -687,6 +687,7 @@ npm install nodemailer
 | `PROJECT-SUMMARY.md` | Project summary and success criteria |
 | `backend/OBSERVABILITY.md` | Observability features documentation |
 | `docs/observability/GRAFANA-CLOUD-REPORT.md` | Grafana Cloud setup, queries, and screenshots |
+| `docs/PROJECT-REPORT.md` | Final report: stack, CI/CD, observability, Grafana choice, logs/metrics/traces |
 
 ---
 
