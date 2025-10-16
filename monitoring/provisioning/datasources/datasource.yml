@@ -1,0 +1,18 @@
+apiVersion: 1
+
+datasources:
+  - name: Backend Metrics
+    type: prometheus
+    access: proxy
+    url: http://tp2-prometheus:9090
+    isDefault: true
+    httpMethod: GET
+    basicAuth: false
+    withCredentials: false
+    editable: true
+    version: 1
+    jsonData:
+      httpMethod: GET
+      scrapeInterval: "15s"
+      queryTimeout: "60s"
+    secureJsonData: {}
