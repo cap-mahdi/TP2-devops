@@ -192,6 +192,16 @@ app.delete('/users/:id', (req, res) => {
   res.status(204).end();
 });
 
+
+// Add a test endpoint
+app.get('/test-cicd', (req, res) => {
+  res.json({ 
+    message: 'CI/CD Pipeline Test', 
+    timestamp: new Date().toISOString(),
+    version: '1.0.1'
+  });
+});
+
 // ===== START SERVER =====
 app.listen(port, () => {
   logger.info(`Backend server started`, { port, environment: 'development' });
