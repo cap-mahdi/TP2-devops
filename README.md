@@ -686,6 +686,7 @@ npm install nodemailer
 | `ARCHITECTURE.md` | System architecture and data flow |
 | `PROJECT-SUMMARY.md` | Project summary and success criteria |
 | `backend/OBSERVABILITY.md` | Observability features documentation |
+| `docs/observability/GRAFANA-CLOUD-REPORT.md` | Grafana Cloud setup, queries, and screenshots |
 
 ---
 
