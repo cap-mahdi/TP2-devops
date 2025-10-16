@@ -1,11 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import winston from 'winston';
-import promClient from 'prom-client';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
+import { 
+  register, 
+  trackConnections, 
+  collectHttpMetrics, 
+  recordUserOperation,
+  recordDatabaseOperation 
+} from './metrics.js';
 
 // ===== LOGGING SETUP (Winston) =====
 const logger = winston.createLogger({
@@ -24,24 +30,6 @@ const logger = winston.createLogger({
       )
     })
   ]
-});
-
-// ===== METRICS SETUP (Prometheus) =====
-const register = new promClient.Registry();
-promClient.collectDefaultMetrics({ register });
-
-const httpRequestCounter = new promClient.Counter({
-  name: 'http_requests_total',
-  help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status_code'],
-  registers: [register]
-});
-
-const httpRequestDuration = new promClient.Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status_code'],
-  registers: [register]
 });
 
 // ===== TRACING SETUP (OpenTelemetry) =====
@@ -75,6 +63,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Connection tracking middleware
+app.use(trackConnections);
+
+// Metrics collection middleware
+app.use(collectHttpMetrics);
+
 // Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
@@ -92,30 +86,6 @@ app.use((req, res, next) => {
       status: res.statusCode,
       duration: `${duration}s`
     });
-  });
-  
-  next();
-});
-
-// Metrics middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  
-  res.on('finish', () => {
-    const duration = (Date.now() - start) / 1000;
-    const route = req.route ? req.route.path : req.path;
-    
-    httpRequestCounter.inc({
-      method: req.method,
-      route: route,
-      status_code: res.statusCode
-    });
-    
-    httpRequestDuration.observe({
-      method: req.method,
-      route: route,
-      status_code: res.statusCode
-    }, duration);
   });
   
   next();
@@ -142,53 +112,82 @@ app.get('/health', (req, res) => {
 // ===== USER CRUD ENDPOINTS =====
 // GET /users
 app.get('/users', (req, res) => {
+  const start = Date.now();
   logger.info('Fetching all users', { count: users.length });
+  
+  // Simulate database operation timing
+  recordDatabaseOperation('select_users', Date.now() - start);
+  recordUserOperation('fetch_all', 'success');
+  
   res.json(users);
 });
 
 // POST /users
 app.post('/users', (req, res) => {
+  const start = Date.now();
   const { name, email } = req.body;
   logger.info('Creating new user', { name, email });
   
-  const id = users.length ? Math.max(...users.map(u => u.id)) + 1 : 1;
-  const newUser = { id, name, email };
-  users.push(newUser);
-  
-  logger.info('User created successfully', { userId: id });
-  res.status(201).json(newUser);
+  try {
+    const id = users.length ? Math.max(...users.map(u => u.id)) + 1 : 1;
+    const newUser = { id, name, email };
+    users.push(newUser);
+    
+    // Record successful operation metrics
+    recordDatabaseOperation('insert_user', Date.now() - start);
+    recordUserOperation('create', 'success');
+    
+    logger.info('User created successfully', { userId: id });
+    res.status(201).json(newUser);
+  } catch (error) {
+    recordUserOperation('create', 'error');
+    logger.error('Error creating user', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // PUT /users/:id
 app.put('/users/:id', (req, res) => {
+  const start = Date.now();
   const id = parseInt(req.params.id);
   const { name, email } = req.body;
   logger.info('Updating user', { userId: id, name, email });
   
   const user = users.find(u => u.id === id);
   if (!user) {
+    recordUserOperation('update', 'not_found');
     logger.warn('User not found for update', { userId: id });
     return res.status(404).json({ error: 'User not found' });
   }
   
   user.name = name;
   user.email = email;
+  
+  recordDatabaseOperation('update_user', Date.now() - start);
+  recordUserOperation('update', 'success');
+  
   logger.info('User updated successfully', { userId: id });
   res.json(user);
 });
 
 // DELETE /users/:id
 app.delete('/users/:id', (req, res) => {
+  const start = Date.now();
   const id = parseInt(req.params.id);
   logger.info('Deleting user', { userId: id });
   
   const idx = users.findIndex(u => u.id === id);
   if (idx === -1) {
+    recordUserOperation('delete', 'not_found');
     logger.warn('User not found for deletion', { userId: id });
     return res.status(404).json({ error: 'User not found' });
   }
   
   users.splice(idx, 1);
+  
+  recordDatabaseOperation('delete_user', Date.now() - start);
+  recordUserOperation('delete', 'success');
+  
   logger.info('User deleted successfully', { userId: id });
   res.status(204).end();
 });

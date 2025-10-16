@@ -63,9 +63,15 @@ This project demonstrates a **complete full-stack application** with enterprise-
 - **OpenTelemetry 0.45+** - Distributed Tracing
 - **CORS 2.8+** - Cross-Origin Support
 
+### Monitoring
+- **Grafana** - Metrics Visualization & Dashboards
+- **Prometheus** - Metrics Collection & Storage
+- **Docker** - Containerized Monitoring Stack
+
 ### DevOps
 - **GitHub Actions** - CI/CD Pipeline
 - **Render** - Cloud Hosting Platform
+- **Docker** - Containerization
 - **npm** - Package Management
 
 ---
@@ -91,13 +97,18 @@ This project demonstrates a **complete full-stack application** with enterprise-
 - ✅ Winston logging with structured JSON
 - ✅ Prometheus metrics (HTTP requests, duration, Node.js metrics)
 - ✅ OpenTelemetry distributed tracing
+- ✅ Grafana dashboards and visualization
+- ✅ Business metrics tracking (user operations)
 - ✅ Real-time request tracking
+- ✅ Application performance monitoring
 
 ### DevOps
 - ✅ GitHub Actions automated pipeline
 - ✅ Automated deployment to Render
 - ✅ npm caching for faster builds
 - ✅ Infrastructure as Code (render.yaml)
+- ✅ Monitoring stack deployment
+- ✅ Multi-service orchestration
 
 ---
 
@@ -138,6 +149,15 @@ npm start
 cd frontend
 npm start
 # Frontend: http://localhost:3000
+
+# 7. Start Grafana monitoring (Terminal 3) - Optional
+cd monitoring
+docker build -f Dockerfile.grafana -t tp2-grafana .
+docker run -p 3001:3000 \
+  -e GF_SECURITY_ADMIN_PASSWORD=admin123 \
+  -e BACKEND_URL=http://host.docker.internal:4000 \
+  tp2-grafana
+# Grafana: http://localhost:3001 (admin/admin123)
 ```
 
 ### Verify Installation
@@ -151,6 +171,9 @@ curl http://localhost:4000/users
 
 # Metrics
 curl http://localhost:4000/metrics
+
+# Grafana (if running locally)
+# Open http://localhost:3001 in browser
 ```
 
 **See** `QUICKSTART.md` for detailed setup instructions.
@@ -218,9 +241,28 @@ curl -X DELETE http://localhost:4000/users/1
 
 ---
 
-## 📊 Observability
+## 📊 Observability & Monitoring
 
-The backend includes **production-grade observability** with three pillars:
+The application includes **comprehensive observability** with monitoring dashboards, metrics collection, and real-time insights.
+
+### 🎯 Grafana Dashboard
+
+**Access:** `https://your-grafana-url.onrender.com` (Production) | `http://localhost:3001` (Local)
+
+**Key Metrics Tracked:**
+- 📈 **HTTP Request Rate** - Requests per second by endpoint
+- ⏱️ **Response Time** - 95th/50th percentile latency 
+- 🚨 **Error Rate** - 4xx/5xx error percentage
+- 🔗 **Active Connections** - Real-time connection count
+- 👥 **User Operations** - CRUD operation rates and success/failure
+- 💾 **Database Performance** - Query response times
+- 🖥️ **System Metrics** - CPU, memory, Node.js performance
+
+**Dashboard Features:**
+- Real-time updates (5-second refresh)
+- 30-minute time window
+- Color-coded thresholds (green/yellow/red)
+- Interactive graphs and single-stat panels
 
 ### 1. 📝 Logging (Winston)
 
@@ -252,6 +294,10 @@ LOG_LEVEL=debug  // Options: error, warn, info, debug
 **Custom Metrics:**
 - `http_requests_total` - Total HTTP requests (counter)
 - `http_request_duration_seconds` - Request duration (histogram)
+- `user_operations_total` - Business operations (counter)
+- `database_response_time_seconds` - Database query time (histogram)
+- `active_connections_total` - Active connections (gauge)
+- `application_errors_total` - Application errors (counter)
 - Default Node.js metrics (memory, CPU, event loop, GC)
 
 **Example:**
@@ -296,7 +342,7 @@ http_request_duration_seconds_bucket{le="0.01",method="GET",route="/users"} 42
 }
 ```
 
-**See** `backend/OBSERVABILITY.md` for detailed documentation.
+**See** `backend/OBSERVABILITY.md` and `monitoring/README.md` for detailed documentation.
 
 ---
 
@@ -309,27 +355,32 @@ Automated pipeline using **GitHub Actions** - builds, tests, and deploys on ever
 ```
 Push to main → GitHub Actions Triggered
     ↓
-┌─────────────────────────┬─────────────────────────┐
-│   Backend Pipeline      │   Frontend Pipeline     │
-│                         │                         │
-│ 1. Checkout code        │ 1. Checkout code        │
-│ 2. Setup Node.js 18     │ 2. Setup Node.js 18     │
-│ 3. Cache npm deps       │ 3. Cache npm deps       │
-│ 4. npm ci (install)     │ 4. npm ci (install)     │
-│ 5. npm test             │ 5. npm test             │
-│ 6. Build                │ 6. npm run build        │
-│ 7. Deploy to Render     │ 7. Deploy to Render     │
-└─────────────────────────┴─────────────────────────┘
-    ↓                         ↓
-Backend Live            Frontend Live
+┌─────────────────────────┬─────────────────────────┬─────────────────────────┐
+│   Backend Pipeline      │   Frontend Pipeline     │   Monitoring Pipeline   │
+│                         │                         │                         │
+│ 1. Checkout code        │ 1. Checkout code        │ 1. Checkout code        │
+│ 2. Setup Node.js 18     │ 2. Setup Node.js 18     │ 2. Setup Docker         │
+│ 3. Cache npm deps       │ 3. Cache npm deps       │ 3. Validate configs     │
+│ 4. npm ci (install)     │ 4. npm ci (install)     │ 4. Build Grafana image  │
+│ 5. npm test             │ 5. npm test             │ 5. Deploy to Render     │
+│ 6. Validate metrics     │ 6. npm run build        │                         │
+│ 7. Deploy to Render     │ 7. Deploy to Render     │                         │
+└─────────────────────────┴─────────────────────────┴─────────────────────────┘
+    ↓                         ↓                         ↓
+Backend Live            Frontend Live            Grafana Live
+                               ↓
+                    Post-deployment validation
 ```
 
 ### Key Features
-- ✅ **Parallel execution** - Frontend and backend jobs run simultaneously
+- ✅ **Parallel execution** - Frontend, backend, and monitoring jobs run simultaneously
 - ✅ **npm caching** - Reduces build time from 2min to 30sec
 - ✅ **Automated testing** - Runs test suites before deployment
+- ✅ **Metrics validation** - Validates Prometheus metrics endpoint
 - ✅ **Automatic Render deployment** - Triggers deployment via Render API
 - ✅ **Build artifact upload** - Saves build artifacts for 30 days
+- ✅ **Multi-service deployment** - Deploys backend, frontend, and Grafana
+- ✅ **Post-deployment validation** - Health checks after deployment
 
 ### Configuration
 
@@ -337,6 +388,10 @@ Backend Live            Frontend Live
 - `RENDER_API_KEY` - Your Render API key
 - `RENDER_BACKEND_SERVICE_ID` - Backend service ID from Render
 - `RENDER_FRONTEND_SERVICE_ID` - Frontend service ID from Render
+- `RENDER_GRAFANA_SERVICE_ID` - Grafana service ID from Render
+- `BACKEND_URL` - Backend service URL (for validation)
+- `FRONTEND_URL` - Frontend service URL (for validation)  
+- `GRAFANA_URL` - Grafana service URL (for validation)
 
 **Pipeline File:** `.github/workflows/ci-cd.yml`
 
@@ -371,7 +426,17 @@ Backend Live            Frontend Live
 - **Environment Variables:**
   - `REACT_APP_API_URL=https://your-backend-url.onrender.com`
 
-#### 3. Update Backend CORS
+#### 3. Grafana Service (Web Service - Docker)
+- **Type:** Web Service  
+- **Name:** `tp2-devops-grafana`
+- **Dockerfile Path:** `./monitoring/Dockerfile.grafana`
+- **Docker Context:** `./monitoring`
+- **Environment Variables:**
+  - `GF_SECURITY_ADMIN_PASSWORD=auto-generated` (Render generates secure password)
+  - `BACKEND_URL=https://your-backend-url.onrender.com`
+  - `GF_SERVER_ROOT_URL=https://your-grafana-url.onrender.com`
+
+#### 4. Update Backend CORS
 After both services are deployed:
 - Go to backend service settings
 - Add `FRONTEND_URL` environment variable with your frontend URL
@@ -380,12 +445,16 @@ After both services are deployed:
 ### Deployment Checklist
 
 - [ ] Backend service created and deployed
-- [ ] Frontend service created and deployed
+- [ ] Frontend service created and deployed  
+- [ ] Grafana service created and deployed
 - [ ] Backend `FRONTEND_URL` configured
 - [ ] Frontend `REACT_APP_API_URL` configured
+- [ ] Grafana `BACKEND_URL` configured
 - [ ] Test backend health endpoint
 - [ ] Test frontend loading
 - [ ] Test CRUD operations
+- [ ] Test Grafana dashboard access
+- [ ] Verify metrics collection
 - [ ] Verify logs in Render dashboard
 - [ ] Check metrics endpoint
 
@@ -445,6 +514,13 @@ $ curl http://localhost:4000/metrics
 http_requests_total{method="GET",route="/users",status="200"} 45
 http_requests_total{method="POST",route="/users",status="201"} 12
 
+# User operations
+user_operations_total{operation="create",status="success"} 12
+user_operations_total{operation="delete",status="not_found"} 2
+
+# Database performance  
+database_response_time_seconds_bucket{le="0.01",operation="select_users"} 30
+
 # HELP http_request_duration_seconds HTTP request duration
 # TYPE http_request_duration_seconds histogram
 http_request_duration_seconds_sum{method="GET",route="/users"} 0.225
@@ -465,6 +541,7 @@ nodejs_heap_size_used_bytes 12345678
   ✓ Cache dependencies
   ✓ Install dependencies
   ✓ Run tests
+  ✓ Validate metrics endpoint
   ✓ Build
   ✓ Deploy to Render
 
@@ -476,6 +553,19 @@ nodejs_heap_size_used_bytes 12345678
   ✓ Run tests
   ✓ Build
   ✓ Deploy to Render
+
+✓ monitoring
+  ✓ Checkout code
+  ✓ Setup Docker
+  ✓ Validate Grafana config
+  ✓ Build Grafana image
+  ✓ Deploy to Render
+
+✓ validate-deployment
+  ✓ Wait for deployments
+  ✓ Validate backend health
+  ✓ Validate frontend
+  ✓ Validate Grafana
 ```
 
 ---

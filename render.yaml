@@ -20,6 +20,8 @@ services:
         # Example: https://tp2-devops-frontend.onrender.com
       - key: LOG_LEVEL
         value: info
+      - key: METRICS_ENABLED
+        value: "true"
     autoDeploy: true
 
   # Frontend Static Site
@@ -39,4 +41,28 @@ services:
         # IMPORTANT: Set this to your backend URL after backend is deployed
         # Example: https://tp2-devops-backend.onrender.com
         # DO NOT include /users - just the base URL
+    autoDeploy: true
+
+  # Grafana Monitoring Service
+  - type: web
+    name: tp2-devops-grafana
+    runtime: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./monitoring/Dockerfile.grafana
+    dockerContext: ./monitoring
+    healthCheckPath: /api/health
+    envVars:
+      - key: GF_SECURITY_ADMIN_PASSWORD
+        generateValue: true
+      - key: GF_INSTALL_PLUGINS
+        value: "grafana-piechart-panel,grafana-worldmap-panel"
+      - key: BACKEND_URL
+        sync: false
+        # Set this to your backend URL after backend is deployed
+        # Example: https://tp2-devops-backend.onrender.com
+      - key: GF_SERVER_ROOT_URL
+        sync: false
+        # Set this to your grafana URL after deployment
+        # Example: https://tp2-devops-grafana.onrender.com
     autoDeploy: true
